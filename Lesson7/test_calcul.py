@@ -7,6 +7,8 @@ def test_form_calculator():
     calculator_page = CalculatorPage(driver)
 
     calculator_page.delay()
-    calculator_page.sum_of_the_numbers()
-    calculator_page.get_result()
+    to_be = calculator_page.sum_of_the_numbers()
+    wait_result = calculator_page.get_result()
     calculator_page.close_driver()
+
+    assert wait_result == to_be

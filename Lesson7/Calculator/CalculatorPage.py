@@ -32,10 +32,8 @@ class CalculatorPage:
     # Получение результата сложения
     def get_result(self):
         WebDriverWait(self._driver, "46").until(
-            EC.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, "div.screen"), "15"))
-        return self._driver.find_element(
-            By.CSS_SELECTOR, "div.screen").text == "15"
+            EC.text_to_be_present_in_element((By.CLASS_NAME, "screen"), "15"))
+        self._driver.find_element(By.CLASS_NAME, "screen").text
 
     # Закрытие браузера
     def close_driver(self):
