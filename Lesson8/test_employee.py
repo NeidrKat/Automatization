@@ -43,7 +43,7 @@ def test_add_new_employee():
     assert body[-1]["companyId"] == companyId
     assert body[-1]["phone"] == "865423175266"
     assert body[-1]["birthdate"] == "2024-08-09"
-    assert body[-1]["isActive"] == True
+    assert body[-1]["isActive"] is True
     assert body[-1]["id"] == emp_id
 
 
@@ -87,7 +87,7 @@ def test_get_employees_id():
     assert body[-1]["companyId"] == companyId
     assert body[-1]["phone"] == "865837387609"
     assert body[-1]["birthdate"] == "2024-08-09"
-    assert body[-1]["isActive"] == True
+    assert body[-1]["isActive"] is True
     assert body[-1]["id"] == emp_id
 
 
@@ -132,4 +132,4 @@ def test_patch_employee():
                                new_phone, new_isActive)
     assert edited["email"] == "mass@mail.ru"
     assert edited["url"] == "_Updated_"
-    assert edited["isActive"] == False
+    assert edited["isActive"] is False
