@@ -1,155 +1,82 @@
-from EmployeesAPI import EmployeesAPI
-from EmplyeesBD import EmpBD
-from CompanyBD import BD
+from CompanyAPI import ApiEmployee
+from Company import Company
+from CompanyBD import DbEmployee
 
-api = EmployeesAPI('https://x-clients-be.onrender.com')
+db = DbEmployee("postgresql://x_clients_user:95PM5lQE0NfzJWDQmLjbZ45ewrz1fLYa@dpg-cqsr9ulumphs73c2q40g-a.frankfurt-postgres.render.com/x_clients_db_fxd0")
 
-db_connection_string = ('postgresql://x_clients_user:'
-                        '95PM5lQE0NfzJWDQmLjbZ45ewrz1fLYa'
-                        '@dpg-cqsr9ulumphs73c2q40g-a.frankfurt-postgres.'
-                        'render.com/x_clients_db_fxd0')
-company_table = BD(db_connection_string)
-employee_table = EmpBD(db_connection_string)
+company = Company("https://x-clients-be.onrender.com")
+param_id = "?company=" + str(company.get_id_company())
+company_id = company.get_id_company()
 
-# Новая компания
-name = 'Питон'
-description = 'Курс для учеников Хогвардса'
+api = ApiEmployee("https://x-clients-be.onrender.com")
 
-# Новый сотрудник
-id = 1
-first_name = "Гарри"
-last_name = "Поттер"
-middle_name = "Мальчик, который выжил"
-email = "new@gmail.com"
-employee_url = "url1.com"
-phone = "+79998887766"
-birthdate = "2000-06-07T08:06:30.137Z"
-is_active = True
+body = {
+    "id": 1,
+    "first_name": "string",
+    "last_name": "string",
+    "middle_name": "string",
+    "companyId": company_id,
+    "email": "new@gmail.com",
+    "employee_url": "url1.com",
+    "phone": "string",
+    "birthdate": "2000-06-07T08:06:30.137Z",
+    "is_active": True
+    }
 
 
-def test_get_employee_list():
-    # создать новую компанию в DB
-    company_table.create(name, description)
-    new_company_id = company_table.get_max_id()
+def test_get_list_employee2():
+    api_result = api.get_list_employee2(param_id)
+    api_result = api_result.json()
+    db_result = db.get_list_employee(company_id)
+    assert len(api_result) == len(db_result)
 
-    # создать нового сотрудника в DB
-    employee_table.create(first_name, last_name, phone, new_company_id,
-                          is_active)
-    new_employee_id = employee_table.get_max_id()
 
-    # получить список сотрудников с помощью API
-    employee_list_api = api.get_employee_list(new_company_id)
+def test_add_employee2():
+    db_result = db.get_list_employee(company_id)
+    api.add_new_employee2(body)
+    api_response = api.get_list_employee2(param_id)
+    api_response = api_response.json()
+    assert len(api_response)-len(db_result) == 1
 
-    # получить список сотрудников в DB
-    employee_list_db = employee_table.get_company_employees(new_company_id)
 
-    # удалить нового сотрудника и новую компанию из DB
-    employee_table.delete(new_employee_id)
-    company_table.delete(new_company_id)
-
-    assert employee_list_api[0]["id"] == new_employee_id, \
-        "Employee's ID is not equal"
-    assert len(employee_list_api) == len(employee_list_db)
+def test_get_new_employee2():
+    resp = api.get_list_employee2(param_id)
+    api_new_employee = resp.json()[-1]['id']
+    db_new_employee = db.get_id_new_employee()
+    assert api_new_employee == db_new_employee
 
 
 def test_create_employee():
-    # создать новую компанию
-    company_table.create(name, description)
-    new_company_id = company_table.get_max_id()
-
-    # создать нового сотрудника с помощью API
-    new_employee = api.add_employee(id, first_name, last_name, middle_name,
-                                    new_company_id, email, employee_url, phone,
-                                    birthdate, is_active)
-    new_id = new_employee["id"]
-
-    # получить сотрудника из DB
-    employee = employee_table.get_employee_by_id(new_id)
-
-    # удалить нового сотрудника и новую компанию из DB
-    employee_table.delete(new_id)
-    company_table.delete(new_company_id)
-
-    assert len(employee) == 1, "Employee was not created"
+    db.add_new_employee("Гарри", "Поттер",
+                        "Мальчик, который выжил",
+                        "0987654321", True, company_id)
+    data_employee = api.get_new_employee2(db.get_id_new_employee())
+    data_employee = data_employee.json()
+    assert data_employee["first_name"] == "Гарри"
+    assert data_employee["last_name"] == "Поттер"
+    assert data_employee["middle_name"] == "Поттер"
+    assert data_employee["phone"] == "0987654321"
+    assert data_employee["isActive"] is True
+    assert data_employee["companyId"] == company_id
+    id = db.get_id_new_employee()
+    db.delete(id)
 
 
-def test_get_employee():
-    # создать новую компанию в DB
-    company_table.create(name, description)
-    new_company_id = company_table.get_max_id()
-
-    # создать нового сотрудника в DB
-    employee_table.create(first_name, last_name, phone, new_company_id,
-                          is_active)
-    new_employee_id = employee_table.get_max_id()
-
-    # получите информацию о сотруднике с помощью API
-    employee = api.get_employee(new_employee_id)
-
-    # delete new employee and new company from DB
-    employee_table.delete(new_employee_id)
-    company_table.delete(new_company_id)
-
-    assert employee["id"] == new_employee_id
-    assert employee["firstName"] == first_name
-    assert len(employee) == 12
-
-
-def test_change_employee_by_api():
-    # создатиь новую компанию в DB
-    company_table.create(name, description)
-    new_company_id = company_table.get_max_id()
-
-    # создать нового сотрудника в DB
-    employee_table.create(first_name, last_name, phone, new_company_id,
-                          is_active)
-    new_employee_id = employee_table.get_max_id()
-
-    # изменить сотрудника с помощью API
-    new_email = "new_new@gmail.com"
-    new_url = "url2.com"
-    new_is_active = False
-    patched_employee = api.patch_employee(new_employee_id,
-                                          new_email, new_url,
-                                          new_is_active)
-    assert patched_employee["id"] == new_employee_id
-    assert patched_employee["email"] == new_email
-    assert patched_employee["url"] == new_url
-    assert patched_employee["isActive"] == new_is_active
-
-    # получите исправленную информацию о сотруднике из DB
-    employee = employee_table.get_employee_by_id(new_employee_id)
-
-    # удалить нового сотрудника и новую компанию из DB
-    employee_table.delete(new_employee_id)
-    company_table.delete(new_company_id)
-
-    assert employee[0][0] == new_employee_id
-    assert employee[0][8] == new_email
-    assert employee[0][10] == new_url
-    assert employee[0][1] == new_is_active
-
-
-def test_change_employee_by_db():
-    # создать новую компанию в DB
-    company_table.create(name, description)
-    new_company_id = company_table.get_max_id()
-
-    # создать нового сотрудника в DB
-    employee_table.create(first_name, last_name, phone, new_company_id,
-                          is_active)
-    new_employee_id = employee_table.get_max_id()
-
-    # изменить сотрудника с помощью DB
-    new_email = "new_new@gmail.com"
-    new_url = "url2.com"
-    new_is_active = False
-    employee_table.update(new_employee_id, new_email, new_url, new_is_active)
-
-    # получите информацию о сотруднике с помощью API
-    employee = api.get_employee(new_employee_id)
-
-    assert employee["id"] == new_employee_id
-    assert employee["email"] == new_email
-    assert employee["avatar_url"] == new_url
-    assert employee["isActive"] == new_is_active
+def test_edit_employee():
+    db.add_new_employee("Гарри", "Поттер",
+                        "Мальчик, который выжил",
+                        "0987654321", True, company_id)
+    id = db.get_id_new_employee()
+    db.edit_employee("Добби", "С носком",
+                     "Домовой эльф",
+                     "0987654321", True, company_id, id)
+    data_employee = api.get_new_employee2(id)
+    data_employee = data_employee.json()
+    assert data_employee["first_тame"] == "Добби"
+    assert data_employee["last_тame"] == "С носком"
+    assert data_employee["middle_name"] == "Домовой эльф"
+    assert data_employee["phone"] == "0987654321"
+    assert data_employee["isActive"] is True
+    assert data_employee["companyId"] == company_id
+    id = db.get_id_new_employee()
+    db.delete(id)
